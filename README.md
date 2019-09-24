@@ -15,7 +15,7 @@ The repository is continuously updated with more papers and codes.
 
 ### Textual information with explicit signals
 Model that incorporate textual feedback to predict star ratings
-* J. McAuley, J. Leskovec *Hidden factors and hidden topics: understanding rating dimensions with review text*, RecSys, 2013 [[PDF](https://cs.stanford.edu/people/jure/pubs/reviews-recsys13.pdf)][code]
+* J. McAuley, J. Leskovec *Hidden factors and hidden topics: understanding rating dimensions with review text*, RecSys, 2013 [[PDF](https://cs.stanford.edu/people/jure/pubs/reviews-recsys13.pdf)][[code](https://github.com/sunhwan-lee/recommender_system/tree/master/models/HFT_model)]
 * Q. Diao, M. Qiu, C.-Y. Wu, A. J. Smola, J. Jiang, and C. Wang *Jointly modeling aspects, ratings and sentiments for movie recommendation (JMARS)*, SIGKDD, 2014 [[PDF](https://www.cs.utexas.edu/~cywu/jmars_kdd2014.pdf)][[code](https://github.com/nihalb/JMARS)]
 * G. Ling, M. R. Lyu, and I. King *Ratings meet reviews, a combined approach to recommend*, RecSys, 2014 [[PDF](https://dl.acm.org/citation.cfm?id=2645728)][code]
 * Y. Wu and M. Ester *FLAME: A probabilistic model combining aspect based opinion mining and collaborative filtering*, WSDM, 2015 [[PDF](https://dl.acm.org/citation.cfm?id=2685291)][code]
