@@ -1,4 +1,4 @@
-import os
+import os, csv, pathlib
 from datetime import datetime
 from collections import namedtuple
 import tensorflow as tf
@@ -9,7 +9,7 @@ from model import HFTModel, offsetModel
 FLAGS = tf.app.flags.FLAGS
 
 # Hyperparameters
-tf.app.flags.DEFINE_integer('vocab_size', 5000, 'Size of vocabulary. \
+tf.app.flags.DEFINE_integer('vocab_size', 10000, 'Size of vocabulary. \
                                                   These will be read from the vocabulary file \
                                                   in order. If the vocabulary file contains \
                                                   fewer words than this number, or if this \
@@ -24,7 +24,7 @@ tf.app.flags.DEFINE_float('init_stddev', 0.1, 'Standard deviation of normal dist
                                                to initialize variables.')
 tf.app.flags.DEFINE_float('min_kappa', 0.1,  'Minimum value to initialize kappa variable')
 tf.app.flags.DEFINE_float('max_kappa', 10.0, 'Maximum value to initialize kappa variable')
-tf.app.flags.DEFINE_float('mu', 0.1, 'parameter that trade-offs rating error and corpus likelihood')
+tf.app.flags.DEFINE_float('mu', 100000.0, 'parameter that trade-offs rating error and corpus likelihood')
 tf.app.flags.DEFINE_float('threshold', 1e-3,  'Threshold for the convergence of Phi and Theta variables')
 
 # Where to find data
@@ -56,6 +56,16 @@ def main(unused_argv):
   train_item_doc = token_to_id(train_ratings, word_to_id)
   valid_item_doc = token_to_id(valid_ratings, word_to_id)
 
+  current_datetime = datetime.now()
+  subfolder_timestamp = datetime.strftime(current_datetime, '%Y%m%d-%H%M%S')
+  subfolder_dataname = os.path.basename(FLAGS.data_path)
+  log_folder = os.path.join(FLAGS.log_root, subfolder_dataname + '-' + subfolder_timestamp)
+  # save vocab to output folder
+  pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True) 
+  with open(os.path.join(log_folder, 'vocab.csv'), 'w') as f:    
+    for idx, token in id_to_word.items():
+      f.write('%s,%s\n' % (idx, token))
+  
   # Try offset model
   offset_model = offsetModel(train_ratings, valid_ratings, test_ratings)
   offset_model.train()
@@ -69,10 +79,6 @@ def main(unused_argv):
     if key in hparam_list: # if it's in the list
       hps_dict[key] = val # add it to the dict
   hps = namedtuple('HParams', hps_dict.keys())(**hps_dict)
-  
-  current_datetime = datetime.now()
-  subfolder_timestamp = datetime.strftime(current_datetime, '%Y%m%d-%H%M%S')
-  log_folder = os.path.join(FLAGS.log_root, subfolder_timestamp)
 
   hft_model = HFTModel(hps, train_ratings, valid_ratings, test_ratings,
                        train_item_doc, valid_item_doc,

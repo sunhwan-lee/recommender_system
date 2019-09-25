@@ -1,8 +1,8 @@
 from datetime import datetime
-import time
-
+import time, os
 import numpy as np
 import tensorflow as tf
+import pickle
 
 # Offset model
 class offsetModel(object):
@@ -46,7 +46,7 @@ class HFTModel(object):
 
     hps = self._hps
 
-    tf.compat.v1.random.set_random_seed(1)
+    #tf.compat.v1.random.set_random_seed(1)
 
     ##############################################################################
     # variables for rating loss
@@ -148,7 +148,7 @@ class HFTModel(object):
       #print(phi_topic_word.get_shape())
 
       #print((theta_doc*phi_topic_word).get_shape())
-      ll_one_doc = tf.math.reduce_sum(theta_doc*phi_topic_word)
+      ll_one_doc = tf.math.reduce_sum(tf.multiply(theta_doc, phi_topic_word))
       ll_all_docs.append(ll_one_doc)
       
     #print(tf.stack(ll_all_docs).get_shape())
@@ -163,7 +163,8 @@ class HFTModel(object):
       tf.tile(self.alpha, [len(self.train_ratings)])
     
     self.train_mse = tf.reduce_mean(tf.square(tf.subtract(self.A.values, pred_train)))
-    self.rating_loss = tf.compat.v1.losses.mean_squared_error(self.A.values, pred_train)
+    self.rating_loss = tf.reduce_sum(tf.square(tf.subtract(self.A.values, pred_train)))
+    #self.rating_loss = tf.compat.v1.losses.mean_squared_error(self.A.values, pred_train)
 
     pred_valid = tf.reduce_sum(
       tf.gather(self.U_plus_bias, self.A_valid.indices[:, 0]) *
@@ -196,8 +197,8 @@ class HFTModel(object):
     # Optimize variables with fixing z (sampled word topic)
     self.optimizer = tf.contrib.opt.ScipyOptimizerInterface(self.total_loss, 
                                                             method='L-BFGS-B',
-                                                            var_to_bounds={self.kappa:(0, np.infty)},
-                                                            options={'maxiter': hps.max_iter_steps})
+                                                            var_to_bounds={self.kappa:(0, np.infty)})#,
+                                                            #options={'maxiter': hps.max_iter_steps})
 
   def build_graph(self):
     tf.compat.v1.logging.info('Building graph...')
@@ -223,23 +224,25 @@ class HFTModel(object):
 
       sess.run(tf.compat.v1.global_variables_initializer())      
       Theta_prev, Phi_prev = sess.run([self.Theta, self.Phi])
-
+      z_prev = sess.run(self.z)
+      
       for step in range(hps.num_iter_steps):
         self.optimizer.minimize(sess)
         
         rating_loss, train_mse, valid_mse, test_mse, \
-        ll_docs, total_loss, Theta, Phi, summary = \
+        kappa, ll_docs, total_loss, Theta, Phi, Psi, summary = \
           sess.run([self.rating_loss, self.train_mse, self.valid_mse, self.test_mse, 
-                    self.ll_docs, self.total_loss, self.Theta, self.Phi,
+                    self.kappa, self.ll_docs, self.total_loss, self.Theta, self.Phi, self.Psi,
                     self._summaries])
-        print('Step: %i - Rating loss: %.4f, Corpus likelihood: %.4f' % 
-              (step, rating_loss, ll_docs))
+        print('Step: %i - Rating loss: %.4f, Corpus likelihood: %.4f, Total loss: %.4f' % 
+              (step, rating_loss, ll_docs, total_loss))
         print('MSE - training: %.4f, valid: %.4f, test: %.4f\n' % 
               (train_mse, valid_mse, test_mse))
 
         # check the difference of Theta, Phi before and after the optimization
         e_Theta = np.linalg.norm(Theta - Theta_prev)
         e_Phi = np.linalg.norm(Phi - Phi_prev)
+        print(e_Theta, e_Phi)
 
         self.summary_writer.add_summary(summary, step)
 
@@ -251,4 +254,13 @@ class HFTModel(object):
         Phi_prev = Phi
 
         self._sample_z()
+        z = sess.run(self.z)
+        print(np.linalg.norm(z-z_prev))
+        print(z_prev[0,:10])
+        print(z[0,:10])
+        z_prev = z
+
+      # save output to pickle file
+      with open(os.path.join(self.log_folder, 'hft_model.pickle'), 'wb') as f:
+        pickle.dump([kappa, Theta, Psi, Phi], f)
         

@@ -1,6 +1,6 @@
 ## Hidden Factors as Topics (HFT) model
 
-This repository contains code for the Recsys 2013 paper *[Hidden factors and hidden topics: understanding rating dimensions with review text](https://cs.stanford.edu/people/jure/pubs/reviews-recsys13.pdf)*. For an intuitive overview of the paper, read the [blog post](http://www.abigailsee.com/2017/04/16/taming-rnns-for-better-summarization.html).
+This repository contains code for the Recsys 2013 paper *[Hidden factors and hidden topics: understanding rating dimensions with review text](https://cs.stanford.edu/people/jure/pubs/reviews-recsys13.pdf)*. For an intuitive overview of the paper, read the [blog post]().
 
 ## Dataset
 Dataset used in the paper and many others can be found in [here](https://cseweb.ucsd.edu/~jmcauley/datasets.html) from the repository of prof. [Julian McAuley](https://cseweb.ucsd.edu/~jmcauley/) in UCSD.
@@ -15,11 +15,10 @@ Amazon review dataaset can be downloaded from [here](http://jmcauley.ucsd.edu/da
 
 ### Run training
 To train your model, run:
-
 ```
-python main.py --data_path=/path/to/downloaded/gz/file --log_root=/path/to/a/log/directory
+python3 main.py --data_path=/path/to/downloaded/gz/file --log_root=/path/to/a/log/directory
 ```
-This will create a subdirectory of your specified `log_root` with timestamp in the format of `%Y%m%d-%H%M%S` where all checkpoints and other data will be saved. Then the model will start training.
+This will create a subdirectory of your specified `log_root` with timestamp in the format of `dataset-%Y%m%d-%H%M%S` where summary file for tensorboard and output files for qualitative analysis will be saved. Then the model will start training.
 
 Following parameters can be specified.
 1. **vocab_size** (integer): The size of vocabulary (deafult 5000)
@@ -39,4 +38,10 @@ While the model is trained, all variables are trained with fixed topic of words,
 Run Tensorboard from the logs directory. You should be able to see data from the training process.
 ```
 tensorboard --logdir=logs\
+```
+
+### Qualitative Analysis
+Section 4.6 in the original paper shows top 10 words for each topic as a qualitative analysis of HFT model. Running `qualitative_analysis.py` with the path to the folder with output files prints out top n words per each topic.
+```
+python3 qualitative_analysis.py --input_file_path /path/to/a/log/directory
 ```
